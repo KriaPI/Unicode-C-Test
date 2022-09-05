@@ -1,5 +1,5 @@
 compiler   := gcc 
-options    := -Wall -std=c17 -O2 
+options    := -Wall -std=c17
 source     := unicode.c
 executable := unicode_test 
 

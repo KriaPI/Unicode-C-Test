@@ -10,8 +10,8 @@
 int main()
 {
     setlocale(LC_ALL, "en_US.utf8");
-    const char* mbstr = u8"🤢😷 🤒 🤕 🤑"; 
+    const char* mbstr = u8"🤢😷 🤒 🤕 🤑ö"; 
     wprintf(L"MB string: %s\n", mbstr);
     
-
+    wprintf(L"MB string: %s\n", mbstr);
 }

@@ -182,6 +182,30 @@ SU32_mutable* PSL_utf8_to_utf32(SU8_immutable* stringToConvert)
     return converted_string;
 }
 
+SU8_immutable* PSL_utf32_to_utf8(SU32_mutable* stringToConvert)
+{
+    // return the converted string
+    mbstate_t state;
+    memset(&state, 0, sizeof(state));
+
+    char* utf8_string = malloc(stringToConvert->length_used * sizeof(char32_t));
+    size_t utf8_index = 0;
+
+    // Convert utf32 code points to utf8 code points
+    for (size_t i=0; i<stringToConvert->length_used; i++)
+    {
+        utf8_index += c32rtomb(&utf8_string[utf8_index], stringToConvert->string_content[i],
+            &state);
+    }
+
+    utf8_string[utf8_index] = '\0';    
+
+    // Create a new string object and return it
+    SU8_immutable* converted_string = PSL_createConversion_u8(utf8_string, 
+        stringToConvert->length_used, utf8_index+1);
+    return converted_string;
+}
+
 SU16_immutable* PSL_utf8_to_utf16(SU8_immutable* string)
 {
     size_t u8_chars = string->multibyte_chars_total;
@@ -197,10 +221,9 @@ SU16_immutable* PSL_utf8_to_utf16(SU8_immutable* string)
     mbstate_t state;
     memset(&state, 0, sizeof(state));
     
-    size_t bytes_to_process = 0;
     while (processed_bytes < string->size_allocated)
     {
-        bytes_to_process = (string->size_allocated - processed_bytes);
+        size_t bytes_to_process = (string->size_allocated - processed_bytes);
 
 
         conversion_result = mbrtoc16(
@@ -239,7 +262,11 @@ int main()
     setlocale(LC_ALL, "en_US.utf8");
     
     SU8_immutable* string = PSL_createString_u8("ååååååååå♥♥♥😂😂😂");
-    SU16_immutable* s16 = PSL_utf8_to_utf16(string);
+    SU32_mutable* string_converted = PSL_utf8_to_utf32(string);
+    SU8_immutable* string2 = PSL_utf32_to_utf8(string_converted);
+
+
+    //SU16_immutable* s16 = PSL_utf8_to_utf16(string);
 
     /*
     printf("utf-8:\n");
@@ -255,7 +282,7 @@ int main()
 
     
     //wprintf(L"%s", realString);
-    wprintf(L"%ls\n", s16->string_content);
+    //wprintf(L"%ls\n", s16->string_content);
     wprintf(L"%s\n", string->string_content);
-    
+    wprintf(L"%s\n", string2->string_content);
 }

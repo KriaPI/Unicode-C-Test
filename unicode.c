@@ -6,7 +6,9 @@
 #include <locale.h>
 #include <stdint.h>
 #include <stdbool.h>
+#define __STD_UTF_8__
 #include <uchar.h>
+
 
 
 // TODO: FIX the conversion functions so that emojis don't end up the wrong emoji! VERY IMPORTANT!
@@ -154,95 +156,6 @@ SU16_immutable* PSL_createString_u16(char16_t* string, size_t characters)
     return object;
 }
 
-
-// Tested, does work. 
-SU32_mutable* PSL_utf8_to_utf32(SU8_immutable* stringToConvert)
-{
-    size_t utf8_chars        = stringToConvert->multibyte_chars_total;
-    size_t utf32_string_size = utf8_chars * sizeof(char32_t);
-    size_t utf8_index        = 0;
-    size_t utf8_index_temp   = 0;
-
-    char32_t* utf32_string = malloc(utf32_string_size);
-    char32_t* string_end   = &utf32_string[utf8_chars]; 
-    mbstate_t state;
-    memset(&state, 0, sizeof(state));
-
-    // Convert each utf-8 code point to utf-32 code points
-    for (size_t i=0; i<utf8_chars; i++)
-    {
-        utf8_index_temp = mbrtoc32(&(utf32_string[i]), &(stringToConvert->string_content[utf8_index]),
-        (size_t) (string_end - utf32_string[i]) , &state);
-        
-        if (utf8_index_temp > 0) utf8_index += utf8_index_temp;
-    }
-
-    // return the converted string
-    SU32_mutable* converted_string = PSL_createString_u32(utf32_string, utf8_chars);
-    return converted_string;
-}
-
-SU8_immutable* PSL_utf32_to_utf8(SU32_mutable* stringToConvert)
-{
-    // return the converted string
-    mbstate_t state;
-    memset(&state, 0, sizeof(state));
-
-    char* utf8_string = malloc(stringToConvert->length_used * sizeof(char32_t));
-    size_t utf8_index = 0;
-
-    // Convert utf32 code points to utf8 code points
-    for (size_t i=0; i<stringToConvert->length_used; i++)
-    {
-        utf8_index += c32rtomb(&utf8_string[utf8_index], stringToConvert->string_content[i],
-            &state);
-    }
-
-    utf8_string[utf8_index] = '\0';    
-
-    // Create a new string object and return it
-    SU8_immutable* converted_string = PSL_createConversion_u8(utf8_string, 
-        stringToConvert->length_used, utf8_index+1);
-    return converted_string;
-}
-
-SU16_immutable* PSL_utf8_to_utf16(SU8_immutable* string)
-{
-    size_t u8_chars = string->multibyte_chars_total;
-    size_t u16_allocation_size = u8_chars * sizeof(char16_t);
-
-    char16_t* u16_string = malloc(u16_allocation_size);
-
-
-    size_t conversion_result = 0;
-    size_t processed_bytes = 0;
-    size_t i = 0;
-
-    mbstate_t state;
-    memset(&state, 0, sizeof(state));
-    
-    while (processed_bytes < string->size_allocated)
-    {
-        size_t bytes_to_process = (string->size_allocated - processed_bytes);
-
-
-        conversion_result = mbrtoc16(
-            &(u16_string[i]), 
-            &(string->string_content[processed_bytes]), 
-            bytes_to_process,
-            &state
-        );
-
-        if (conversion_result > (size_t) 0) processed_bytes += conversion_result;
-        i++;
-
-    } 
-
-    SU16_immutable* convertedString = PSL_createString_u16(u16_string, i);
-    return convertedString;
-}
-
-
 void PSL_bitPrint(char byteToPrint, char* outputName)
 {
     char oneBitMask = 0b0000001;
@@ -256,6 +169,18 @@ void PSL_bitPrint(char byteToPrint, char* outputName)
     wprintf(L"\n");
 }
 
+void PSL_equal_check(SU8_immutable* string1, SU8_immutable* string2)
+{
+    for (size_t i=0; i<string1->size_allocated; i++)
+    {
+        if (string1->string_content[i] != string2->string_content[i])
+        {
+            wprintf(L"Not Equal\n");
+            return;
+        }
+    }
+    wprintf(L"Equal\n");
+}
 
 int main()
 {
@@ -265,24 +190,9 @@ int main()
     SU32_mutable* string_converted = PSL_utf8_to_utf32(string);
     SU8_immutable* string2 = PSL_utf32_to_utf8(string_converted);
 
-
-    //SU16_immutable* s16 = PSL_utf8_to_utf16(string);
-
-    /*
-    printf("utf-8:\n");
-    for (size_t i=0; i<string->multibyte_chars_total; ++i)
-        printf("0x%08X ", string->string_content[i]);
-    printf("\n");
-    
-    printf("utf-16:\n");
-    for (size_t i=0; i<s16->length_used; ++i)
-        printf("0x%08X ", s16->string_content[i]);
-    printf("\n");
-    */
-
-    
     //wprintf(L"%s", realString);
     //wprintf(L"%ls\n", s16->string_content);
+    PSL_equal_check(string, string2);
     wprintf(L"%s\n", string->string_content);
     wprintf(L"%s\n", string2->string_content);
 }

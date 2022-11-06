@@ -1,0 +1,7 @@
+compiler   := gcc 
+options    := -Wall -std=c17 -g
+source     := unicode-testing.c
+executable := testing
+
+program: 
+	$(compiler) $(source) -o $(executable) $(options)
